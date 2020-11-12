@@ -41,6 +41,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a/go.mod h1:EXuID2Zs0pAQhH8yz+DNjUbjppKQzKFAn28TMYPB6IU=
 gitee.com/cristiane/go-common v1.0.1/go.mod h1:EX6uv/8C8ThHXrkpStwKupS4Ex8QX53EwuAf3/BzPoY=
+gitee.com/cristiane/micro-mall-pay-consumer v0.0.0-20201106162719-ebf3a3b6ab6a h1:12FQGH83khlNVHuRbJ2UTRBTjT0fM7uC9Pcr9cDov14=
+gitee.com/cristiane/micro-mall-pay-consumer v0.0.0-20201106162719-ebf3a3b6ab6a/go.mod h1:fFVkrMKNx+hF1hKe0WPli7xCL1glAXpKULkHzdZgcds=
 gitee.com/cristiane/micro-mall-sku v0.0.0-20200909135151-da82a5cdf58b/go.mod h1:R0KW6tkRRataddJxhcubiHIeG4+6eXkpMndbzmEN8o8=
 gitee.com/cristiane/micro-mall-users v0.0.0-20200905175913-5c852df4d247/go.mod h1:KV/mKJVx5PxLatO+jROTFQnF3vsPCHvcsbXGIX0bX04=
 gitee.com/kelvins-io/common v1.0.2 h1:euEsPWBkWvIo9SRjV7cy7iQPqgdsINxCDIkPs/ty3U0=
@@ -378,6 +380,7 @@ github.com/santhosh-tekuri/jsonschema v1.2.4/go.mod h1:TEAUOeZSmIxTTuHatJzrvARHi
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/shirou/gopsutil v2.20.1+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
+github.com/shopspring/decimal v1.2.0/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=

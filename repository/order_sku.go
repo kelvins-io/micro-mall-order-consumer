@@ -13,3 +13,11 @@ func GetOrderSkuList(shopIdList []int64, orderCodeList []string) ([]mysql.OrderS
 		Find(&result)
 	return result, err
 }
+
+func GetOrderSkuListByOrderCode(orderCodeList []string) ([]mysql.OrderSku, error) {
+	var result = make([]mysql.OrderSku, 0)
+	err := kelvins.XORM_DBEngine.Table(mysql.TableOrderSku).
+		In("order_code", orderCodeList).
+		Find(&result)
+	return result, err
+}

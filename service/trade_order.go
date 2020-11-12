@@ -75,7 +75,6 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuList ,err: %v, shopIdList: %+v,orderCodeList: %+v", err, shopIdList, orderCodeList)
 		return err
 	}
-
 	// 从购物车中删除商品
 	for i := 0; i < len(orderSkuList); i++ {
 		orderSku := orderSkuList[i]
