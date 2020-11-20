@@ -99,11 +99,23 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 	orderCodeList := make([]string, len(orderList))
 	for i := 0; i < len(orderList); i++ {
 		orderCodeList[i] = orderList[i].OrderCode
-		deliveryInfo.SendUser = orderList[i].ShopName
-		deliveryInfo.SendAddr = orderList[i].ShopAddress
+	}
+	orderSceneShopList, err := repository.FindOrderSceneShopList(orderCodeList)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "FindOrderSceneShopList err: %v, orderCodeList: %v", err, orderCodeList)
+		return result, fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
+	}
+	orderCodeToSceneShop := map[string]mysql.OrderSceneShop{}
+	for i := 0; i < len(orderSceneShopList); i++ {
+		orderCodeToSceneShop[orderSceneShopList[i].OrderCode] = orderSceneShopList[i]
+	}
+	for i := 0; i < len(orderList); i++ {
+		deliveryInfo.SendUser = orderCodeToSceneShop[orderList[i].OrderCode].ShopName
+		deliveryInfo.SendAddr = orderCodeToSceneShop[orderList[i].OrderCode].ShopAddress
 		deliveryInfo.SendTime = util.ParseTimeOfStr(orderList[i].PayExpire.Unix())
 		orderToDeliveryInfo[orderList[i].OrderCode] = deliveryInfo
 	}
+
 	orderSkuList, err := repository.GetOrderSkuListByOrderCode(orderCodeList)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuListByOrderCode err: %v, orderCodeList: %v", err, orderCodeList)
@@ -156,12 +168,14 @@ func updateOrderState(ctx context.Context, orderList []mysql.Order) error {
 	for i := 0; i < len(orderList); i++ {
 		row := orderList[i]
 		where := map[string]interface{}{
-			"order_code": row.OrderCode,
+			"order_code":  row.OrderCode,
+			"update_time": row.UpdateTime,
 		}
 		maps := map[string]interface{}{
-			"update_time": time.Now(),
-			"state":       0,
-			"pay_state":   3,
+			"update_time":      time.Now(),
+			"state":            0,
+			"pay_state":        3,
+			"inventory_verify": 1, // 库存核实
 		}
 		rowsAffected, err := repository.UpdateOrderByTx(tx, where, maps)
 		if err != nil {
