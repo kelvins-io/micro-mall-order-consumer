@@ -6,9 +6,9 @@ import (
 	"xorm.io/xorm"
 )
 
-func GetOrderList(txCode string) ([]mysql.Order, error) {
+func GetOrderList(sqlSelect, txCode string) ([]mysql.Order, error) {
 	var result = make([]mysql.Order, 0)
-	err := kelvins.XORM_DBEngine.Table(mysql.TableOrder).Where("tx_code = ?", txCode).Find(&result)
+	err := kelvins.XORM_DBEngine.Table(mysql.TableOrder).Select(sqlSelect).Where("tx_code = ?", txCode).Find(&result)
 	return result, err
 }
 

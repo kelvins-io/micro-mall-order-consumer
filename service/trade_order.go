@@ -59,7 +59,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 	}
 
 	// 从数据库查询订单涉及的商品
-	orderList, err := repository.GetOrderList(notice.TxCode)
+	orderList, err := repository.GetOrderList("shop_id,order_code", notice.TxCode)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderList err: %v, tx_code: %v", err, notice.TxCode)
 		return err
@@ -70,7 +70,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 		shopIdList[i] = orderList[i].ShopId
 		orderCodeList[i] = orderList[i].OrderCode
 	}
-	orderSkuList, err := repository.GetOrderSkuList(shopIdList, orderCodeList)
+	orderSkuList, err := repository.GetOrderSkuList("shop_id,sku_code", shopIdList, orderCodeList)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuList ,err: %v, shopIdList: %+v,orderCodeList: %+v", err, shopIdList, orderCodeList)
 		return err

@@ -46,15 +46,16 @@ func TradePayCallbackConsume(ctx context.Context, body string) error {
 		return err
 	}
 	// 根据交易号获取订单详情
-	orderDetailList, err := getOrderDetailListByTxCode(ctx, notice.Uid, notice.TxCode)
-	if err != nil {
-		return err
-	}
-	// 处理订单物流
-	err = handleOrderLogistics(ctx, orderDetailList)
-	if err != nil {
-		return err
-	}
+	//orderDetailList, err := getOrderDetailListByTxCode(ctx, notice.Uid, notice.TxCode)
+	//if err != nil {
+	//	return err
+	//}
+	//// 处理订单物流
+	//err = handleOrderLogistics(ctx, orderDetailList)
+	//if err != nil {
+	//	return err
+	//}
+
 	return nil
 }
 
@@ -91,7 +92,7 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 		ReceivePhone: userDeliveryRsp.Info[0].MobilePhone,
 	}
 	orderToDeliveryInfo := map[string]args.DeliveryLogistics{}
-	orderList, err := repository.GetOrderList(txCode)
+	orderList, err := repository.GetOrderList("order_code,pay_expire", txCode)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderCodeList err: %v, TxCode: %v", err, txCode)
 		return result, fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
@@ -115,7 +116,6 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 		deliveryInfo.SendTime = util.ParseTimeOfStr(orderList[i].PayExpire.Unix())
 		orderToDeliveryInfo[orderList[i].OrderCode] = deliveryInfo
 	}
-
 	orderSkuList, err := repository.GetOrderSkuListByOrderCode(orderCodeList)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuListByOrderCode err: %v, orderCodeList: %v", err, orderCodeList)
@@ -149,7 +149,7 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 
 func getOrderListByTxCode(ctx context.Context, txCode string) ([]mysql.Order, error) {
 	// 根据订单交易号获取支付订单
-	orderList, err := repository.GetOrderList(txCode)
+	orderList, err := repository.GetOrderList("order_code", txCode)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderList err: %v, TxCode: %v", err, txCode)
 		return orderList, fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
@@ -168,8 +168,8 @@ func updateOrderState(ctx context.Context, orderList []mysql.Order) error {
 	for i := 0; i < len(orderList); i++ {
 		row := orderList[i]
 		where := map[string]interface{}{
-			"order_code":  row.OrderCode,
-			"update_time": row.UpdateTime,
+			"order_code": row.OrderCode,
+			//"update_time": row.UpdateTime,
 		}
 		maps := map[string]interface{}{
 			"update_time":      time.Now(),
