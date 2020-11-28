@@ -41,10 +41,10 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 	}
 	defer conn.Close()
 	client := users.NewUsersServiceClient(conn)
-	r := users.GetUserInfoRequest{
-		Uid: notice.Uid,
+	r := users.GetUserAccountIdRequest{
+		UidList: []int64{notice.Uid},
 	}
-	rsp, err := client.GetUserInfo(ctx, &r)
+	rsp, err := client.GetUserAccountId(ctx, &r)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserInfo %v,err: %v, r: %+v", serverName, err, r)
 		return err
@@ -53,7 +53,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserInfo %v,not ok : %v, rsp: %+v", serverName, err, rsp)
 		return fmt.Errorf(rsp.Common.Msg)
 	}
-	if rsp.Info == nil || rsp.Info.AccountId == "" {
+	if rsp.Common.Code == users.RetCode_USER_NOT_EXIST || rsp.InfoList[0].AccountId == "" {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserInfo %v,accountId null : %v, rsp: %+v", serverName, err, rsp)
 		return fmt.Errorf(errcode.GetErrMsg(code.UserNotExist))
 	}
@@ -63,6 +63,9 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderList err: %v, tx_code: %v", err, notice.TxCode)
 		return err
+	}
+	if len(orderList) == 0 {
+		return nil
 	}
 	shopIdList := make([]int64, len(orderList))
 	orderCodeList := make([]string, len(orderList))
@@ -74,6 +77,9 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuList ,err: %v, shopIdList: %+v,orderCodeList: %+v", err, shopIdList, orderCodeList)
 		return err
+	}
+	if len(orderSkuList) == 0 {
+		return nil
 	}
 	// 从购物车中删除商品
 	for i := 0; i < len(orderSkuList); i++ {

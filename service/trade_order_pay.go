@@ -8,6 +8,7 @@ import (
 	"gitee.com/cristiane/micro-mall-order-consumer/pkg/code"
 	"gitee.com/cristiane/micro-mall-order-consumer/pkg/util"
 	"gitee.com/cristiane/micro-mall-order-consumer/proto/micro_mall_logistics_proto/logistics_business"
+	"gitee.com/cristiane/micro-mall-order-consumer/proto/micro_mall_sku_proto/sku_business"
 	"gitee.com/cristiane/micro-mall-order-consumer/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-order-consumer/repository"
 	"gitee.com/kelvins-io/common/errcode"
@@ -17,7 +18,6 @@ import (
 )
 
 func TradePayCallbackConsume(ctx context.Context, body string) error {
-	fmt.Println("订单支付通知")
 	// 通知消息解码
 	var businessMsg args.CommonBusinessMsg
 	var err error
@@ -36,12 +36,20 @@ func TradePayCallbackConsume(ctx context.Context, body string) error {
 		return err
 	}
 	// 根据订单交易号获取订单
-	orderList, err := getOrderListByTxCode(ctx, notice.TxCode)
+	orderCodeList, err := getOrderListByTxCode(ctx, notice.TxCode)
 	if err != nil {
 		return err
 	}
+	if len(orderCodeList) == 0 {
+		return nil
+	}
 	// 更新订单状态
-	err = updateOrderState(ctx, orderList)
+	err = updateOrderState(ctx, orderCodeList)
+	if err != nil {
+		return err
+	}
+	// 确认订单库存
+	err = confirmSkuInventory(ctx, orderCodeList)
 	if err != nil {
 		return err
 	}
@@ -147,59 +155,66 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 	return result, nil
 }
 
-func getOrderListByTxCode(ctx context.Context, txCode string) ([]mysql.Order, error) {
+func getOrderListByTxCode(ctx context.Context, txCode string) ([]string, error) {
 	// 根据订单交易号获取支付订单
 	orderList, err := repository.GetOrderList("order_code", txCode)
+	orderCodeList := make([]string, len(orderList))
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetOrderList err: %v, TxCode: %v", err, txCode)
-		return orderList, fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
+		return orderCodeList, fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
 	}
-	return orderList, nil
+	for i := 0; i < len(orderList); i++ {
+		orderCodeList[i] = orderList[i].OrderCode
+	}
+	return orderCodeList, nil
 }
 
-func updateOrderState(ctx context.Context, orderList []mysql.Order) error {
-	tx := kelvins.XORM_DBEngine.NewSession()
-	err := tx.Begin()
-	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "updateOrderState Begin err: %v", err)
-		return fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
-	}
+func updateOrderState(ctx context.Context, orderList []string) error {
 	// 更新订单状态
-	for i := 0; i < len(orderList); i++ {
-		row := orderList[i]
-		where := map[string]interface{}{
-			"order_code": row.OrderCode,
-			//"update_time": row.UpdateTime,
-		}
-		maps := map[string]interface{}{
-			"update_time":      time.Now(),
-			"state":            0,
-			"pay_state":        3,
-			"inventory_verify": 1, // 库存核实
-		}
-		rowsAffected, err := repository.UpdateOrderByTx(tx, where, maps)
-		if err != nil {
-			errRollback := tx.Rollback()
-			if errRollback != nil {
-				kelvins.ErrLogger.Errorf(ctx, "UpdateOrderByTx Rollback err: %v, where: %+v, maps: %+v", errRollback, where, maps)
-			}
-			kelvins.ErrLogger.Errorf(ctx, "UpdateOrderByTx err: %v, where: %+v, maps: %+v", err, where, maps)
-			return fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
-		}
-		if rowsAffected <= 0 {
-			errRollback := tx.Rollback()
-			if errRollback != nil {
-				kelvins.ErrLogger.Errorf(ctx, "UpdateOrderByTx Rollback err: %v, where: %+v, maps: %+v", errRollback, where, maps)
-			}
-			return fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
-		}
+	where := map[string]interface{}{
+		"order_code": orderList,
 	}
-	err = tx.Commit()
+	maps := map[string]interface{}{
+		"state":            0,
+		"pay_state":        3,
+		"inventory_verify": 1, // 库存核实
+		"update_time":      time.Now(),
+	}
+	rowsAffected, err := repository.UpdateOrder(where, maps)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "UpdateOrderByTx Commit err: %v", err)
-		return fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
+		kelvins.ErrLogger.Errorf(ctx, "UpdateOrderByTx err: %v, where: %+v, maps: %+v", err, where, maps)
+		return err
 	}
+	_ = rowsAffected
 
+	return nil
+}
+
+func confirmSkuInventory(ctx context.Context, orderCodeList []string) error {
+	serverName := args.RpcServiceMicroMallSku
+	conn, err := util.GetGrpcClient(serverName)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
+		return err
+	}
+	defer conn.Close()
+	skuClient := sku_business.NewSkuBusinessServiceClient(conn)
+	skuReq := &sku_business.ConfirmSkuInventoryRequest{
+		OutTradeNo: orderCodeList,
+		OpMeta: &sku_business.OperationMeta{
+			OpUid: 0,
+			OpIp:  "order-consumer-confirm",
+		},
+	}
+	skuRsp, err := skuClient.ConfirmSkuInventory(ctx, skuReq)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "ConfirmSkuInventory err: %v, skuReq: %+v", err, skuReq)
+		return err
+	}
+	if skuRsp.Common.Code != sku_business.RetCode_SUCCESS {
+		kelvins.ErrLogger.Errorf(ctx, "ConfirmSkuInventory err: %v, skuReq: %+v,skuRsp: %+v ", err, skuReq, skuRsp)
+		return fmt.Errorf("ConfirmSkuInventory err")
+	}
 	return nil
 }
 

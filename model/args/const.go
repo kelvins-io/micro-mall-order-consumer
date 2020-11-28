@@ -38,7 +38,7 @@ type GoodsLogistics struct {
 
 const (
 	RpcServiceMicroMallUsers       = "micro-mall-users"
-	RpcServiceMicroMallShop        = "micro-mall-shop"
+	RpcServiceMicroMallSku         = "micro-mall-sku"
 	RpcServiceMicroMallLogistics   = "micro-mall-logistics"
 	RpcServiceMicroMallUserTrolley = "micro-mall-trolley"
 )

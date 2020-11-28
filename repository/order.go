@@ -16,6 +16,10 @@ func UpdateOrderByTx(tx *xorm.Session, query, maps interface{}) (int64, error) {
 	return tx.Table(mysql.TableOrder).Where(query).Update(maps)
 }
 
+func UpdateOrder(query, maps interface{}) (int64, error) {
+	return kelvins.XORM_DBEngine.Table(mysql.TableOrder).Where(query).Update(maps)
+}
+
 func GetOrderCodeList(txCode string) ([]string, error) {
 	var collection = make([]mysql.Order, 0)
 	var result = make([]string, 0)
