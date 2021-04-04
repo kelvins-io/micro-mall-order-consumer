@@ -9,7 +9,7 @@ Level = "debug"
 [kelvins-mysql]
 Host = "127.0.0.1:3306"
 UserName = "root"
-Password = "07030501310"
+Password = "xxx"
 DBName = "micro_mall_order"
 Charset = "utf8"
 PoolNum =  10
@@ -20,7 +20,7 @@ ParseTime = true
 
 [kelvins-redis]
 Host = "127.0.0.1:6379"
-Password = "07030501310"
+Password = "xxxx"
 DB = 12
 PoolNum = 10
 
@@ -31,7 +31,7 @@ WorkerConcurrency = 5
 [kelvins-queue-amqp]
 Broker = "amqp://micro-mall:szJ9aePR@localhost:5672/micro-mall"
 DefaultQueue = "trade_order_notice"
-ResultBackend = "redis://07030501310@127.0.0.1:6379/10"
+ResultBackend = "redis://xxxx@127.0.0.1:6379/10"
 ResultsExpireIn = 36000
 Exchange = "trade_order_notice"
 ExchangeType = "direct"
@@ -41,7 +41,7 @@ TaskRetryCount = 3
 TaskRetryTimeout = 36000
 
 [email-config]
-User = "1225807604@qq.com"
-Password = "glxggszbnrnigcii"
+User = "xxxx@qq.com"
+Password = "xxx"
 Host = "smtp.qq.com"
 Port = "465"
