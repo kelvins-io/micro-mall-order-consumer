@@ -17,8 +17,8 @@ _book
 logs/
 vendor
 etc/app.ini
-micro-mall-consumer
-micro-mall-consumer.pid
+micro-mall-order-consumer
+micro-mall-order-consumer.pid
 micro-mall-order-consumer-darwin-amd64
 micro-mall-order-consumer-linux-amd64
 micro-mall-order-consumer-windows-amd64.exe
