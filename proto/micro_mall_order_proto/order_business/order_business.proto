@@ -46,11 +46,38 @@ service OrderBusinessService {
             body:"*"
         };
     }
+    // 订单支付通知
+    rpc OrderTradeNotice(OrderTradeNoticeRequest) returns (OrderTradeNoticeResponse) {
+        option (google.api.http) = {
+            post: "/v1/order/notice"
+            body:"*"
+        };
+    }
+    // 订单状态检查
+    rpc CheckOrderState(CheckOrderStateRequest) returns (CheckOrderStateResponse) {
+        option (google.api.http) = {
+            post: "/v1/order/check"
+            body:"*"
+        };
+    }
+    // 获取订单
+    rpc FindOrderList(FindOrderListRequest) returns (FindOrderListResponse) {
+        option (google.api.http) = {
+            get: "/v1/order/list"
+        };
+    }
+    // 店铺订单存在检查
+    rpc InspectShopOrder(InspectShopOrderRequest) returns (InspectShopOrderResponse) {
+        option (google.api.http) = {
+            get: "/v1/order/shop/inspect"
+        };
+    }
 }
 
 enum RetCode {
     SUCCESS = 0;
     ERROR = 500;
+    ERR_REQUEST_DATA_FORMAT = 40000;
     USER_NOT_EXIST = 50001;
     USER_EXIST = 50002;
     MERCHANT_NOT_EXIST = 50003;
@@ -68,6 +95,14 @@ enum RetCode {
     OPERATION_NOT_EFFECT = 50015; // 操作未生效
     ORDER_TX_CODE_EMPTY = 50016; // 订单事务号为空
     ORDER_DELIVERY_NOT_EXIST = 50017; // 订单交付信息不存在
+    ORDER_TX_CODE_NOT_EXIST = 50018; // 订单交易号不存在
+    SKU_PRICE_VERSION_NOT_EXIST = 50019; // 商品价格版本不存在或不符合规则
+    ORDER_PAY_COMPLETED = 50020; // 订单支付完成
+    ORDER_EXPIRE = 50021; // 订单过期
+    ORDER_STATE_INVALID = 50022; // 订单无效
+    REQUEST_DATA_TOO_MUCH = 50023; // 请求数据太多
+    USER_STATE_NOT_VERIFY = 50024; // 用户状态未审核或验证或被锁定
+    ORDER_PAY_ING = 50025;
 }
 
 enum OperationType {
@@ -102,15 +137,16 @@ message CommonResponse {
 
 enum OrderStateType {
     ORDER_EFFECTIVE = 0; // 有效
-    ORDER_INVALID = 1; // 无效
-    ORDER_LOCKED = 2; // 锁定
+    ORDER_LOCKED = 1; // 锁定中
+    ORDER_INVALID = 2; // 无效
 }
 
 enum OrderPayStateType {
     PAY_READY = 0; // 支付就绪，未支付
     PAY_RUN = 1; // 正在支付中
-    PAY_SUCCESS = 2; // 支付成功
-    PAY_FAILED = 3; // 支付失败
+    PAY_FAILED = 2; // 支付失败
+    PAY_SUCCESS = 3; // 支付成功
+    PAY_CANCEL = 4; // 支付取消
 }
 
 message OperationMeta {
@@ -118,6 +154,16 @@ message OperationMeta {
     string op_ip = 2;
     string op_platform = 3; // 操作平台
     string op_device = 4; // 操作设备
+}
+
+message PageMeta {
+    int32 page_num = 1;
+    int32 page_size = 2;
+}
+
+message FiltrateTimeMeta {
+    string start_time = 1;
+    string end_time = 2;
 }
 
 message OrderStateEntry {
@@ -129,6 +175,68 @@ message OrderStateEntry {
 message UpdateOrderStateRequest {
     repeated OrderStateEntry entry_list = 1;
     OperationMeta operation_meta = 2;
+}
+
+message CheckOrderStateRequest {
+    repeated string order_codes = 1;
+}
+
+message OrderState {
+    string order_code = 1;
+    OrderPayStateType pay_state = 2;
+    OrderStateType state = 3;
+    bool is_exist = 4;
+}
+
+message CheckOrderStateResponse {
+    CommonResponse common = 1;
+    repeated OrderState list = 2;
+}
+
+message InspectShopOrderRequest {
+    int64 uid = 1;
+    int64 shop_id = 2;
+    string order_code = 3;
+}
+
+message InspectShopOrderResponse {
+    CommonResponse common = 1;
+}
+
+message FindOrderListRequest {
+    repeated int64 shop_id_list = 1; // 店铺ID，用户ID不能都为空
+    repeated int64 uid_list = 2; // 用户ID，店铺ID不能都为空
+    FiltrateTimeMeta time_meta = 198; // 时间参数
+    PageMeta page_meta = 199; // 分页
+}
+
+message OrderListEntry {
+    string order_code = 1;
+    int64 uid = 2;
+    int64 shop_id = 3;
+    string description = 4;
+    string client_ip = 5;
+    string device_code = 6;
+    OrderStateType state = 7;
+    OrderPayStateType pay_state = 8;
+    string money = 9;
+    string create_time = 10;
+}
+
+message FindOrderListResponse {
+    CommonResponse common = 1;
+    repeated OrderListEntry list = 2;
+    int64 total = 3; // 当前条件下订单总数
+}
+
+message OrderTradeNoticeRequest {
+    int64 uid = 1;
+    string order_tx_code = 2; // 订单交易号
+    string pay_id = 3; // 支付ID（支付后产生）
+}
+
+message OrderTradeNoticeResponse {
+    CommonResponse common = 1;
 }
 
 message UpdateOrderStateResponse {
@@ -151,26 +259,20 @@ message OrderSku {
 
 message GetOrderDetailRequest {
     string tx_code = 1;
+    int64 uid = 2;
 }
 
 message ShopOrderDetail {
     string order_code  = 1;
-    string merchant = 2; // 店铺商户,店铺主体
-    string time_expire = 3; // 订单有效期
-    string notify_url = 4; // 订单支付成功通知
-    string description = 5; // 订单描述
-    TradeGoodsDetail detail = 199;
+    int64 shop_id = 2; // 店铺主体
+    string description = 3; // 订单描述
+    string money = 4; // 需要支付金额
 }
 
 message GetOrderDetailResponse {
     CommonResponse common = 1;
-    string account = 4; // 订单涉及的用户
     CoinType coin_type = 2; // 币种
     repeated ShopOrderDetail list = 90;
-}
-
-message TradeGoodsDetail {
-    string money = 1; // 需要支付金额
 }
 
 message OrderDetail {

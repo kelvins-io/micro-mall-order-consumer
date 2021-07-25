@@ -35,34 +35,40 @@ func TradePayCallbackConsume(ctx context.Context, body string) error {
 		kelvins.ErrLogger.Info(ctx, "businessMsg.Msg: %v Unmarshal err: %v", businessMsg.Msg, err)
 		return err
 	}
-	// 根据订单交易号获取订单
-	orderCodeList, err := getOrderListByTxCode(ctx, notice.TxCode)
-	if err != nil {
-		return err
-	}
-	if len(orderCodeList) == 0 {
-		return nil
-	}
-	// 更新订单状态
-	err = updateOrderState(ctx, orderCodeList)
-	if err != nil {
-		return err
-	}
-	// 确认订单库存
-	err = confirmSkuInventory(ctx, orderCodeList)
-	if err != nil {
-		return err
-	}
-	// 根据交易号获取订单详情
-	//orderDetailList, err := getOrderDetailListByTxCode(ctx, notice.Uid, notice.TxCode)
-	//if err != nil {
-	//	return err
-	//}
-	//// 处理订单物流
-	//err = handleOrderLogistics(ctx, orderDetailList)
-	//if err != nil {
-	//	return err
-	//}
+	time.Sleep(2 * time.Second)
+	go func() {
+		// 根据订单交易号获取订单
+		orderCodeList, err := getOrderListByTxCode(ctx, notice.TxCode)
+		if err != nil {
+			return
+		}
+		if len(orderCodeList) == 0 {
+			return
+		}
+		// 更新订单状态
+		err = updateOrderState(ctx, orderCodeList)
+		if err != nil {
+			return
+		}
+		// 确认订单库存
+		err = confirmSkuInventory(ctx, orderCodeList)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		// 根据交易号获取订单详情
+		orderDetailList, err := getOrderDetailListByTxCode(ctx, notice.Uid, notice.TxCode)
+		if err != nil {
+			return
+		}
+		// 处理订单物流
+		err = handleOrderLogistics(ctx, orderDetailList)
+		if err != nil {
+			return
+		}
+	}()
 
 	return nil
 }
@@ -78,16 +84,15 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 	defer conn.Close()
 	usersClient := users.NewUsersServiceClient(conn)
 	userDeliveryReq := &users.GetUserDeliveryInfoRequest{
-		Uid:            uid,
-		UserDeliveryId: 0,
+		Uid: uid,
 	}
 	userDeliveryRsp, err := usersClient.GetUserDeliveryInfo(ctx, userDeliveryReq)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo %v, err: %v, req: %v", serverName, err, userDeliveryReq)
+		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo err: %v, req: %+v", err, userDeliveryReq)
 		return result, err
 	}
 	if userDeliveryRsp.Common.Code != users.RetCode_SUCCESS {
-		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo %v, err: %v, rsp: %v", serverName, err, userDeliveryRsp)
+		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo err: %v,req: %+v rsp: %+v", err, userDeliveryReq, userDeliveryRsp)
 		return result, err
 	}
 	deliveryInfo := args.DeliveryLogistics{
@@ -95,9 +100,9 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 		CourierType:  1,
 		ReceiveType:  1,
 		SendTime:     util.ParseTimeOfStr(time.Now().Unix()),
-		ReceiveUser:  userDeliveryRsp.Info[0].DeliveryUser,
-		ReceiveAddr:  userDeliveryRsp.Info[0].Area + "|" + userDeliveryRsp.Info[0].DetailedArea,
-		ReceivePhone: userDeliveryRsp.Info[0].MobilePhone,
+		ReceiveUser:  userDeliveryRsp.InfoList[0].DeliveryUser,
+		ReceiveAddr:  userDeliveryRsp.InfoList[0].Area + "|" + userDeliveryRsp.InfoList[0].DetailedArea,
+		ReceivePhone: userDeliveryRsp.InfoList[0].MobilePhone,
 	}
 	orderToDeliveryInfo := map[string]args.DeliveryLogistics{}
 	orderList, err := repository.GetOrderList("order_code,pay_expire", txCode)
@@ -134,8 +139,8 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 		orderCodeToOrderSku[orderSkuList[i].OrderCode] = append(orderCodeToOrderSku[orderSkuList[i].OrderCode], orderSkuList[i])
 	}
 	for k, _ := range orderCodeToOrderSku {
-		goods := make([]args.GoodsLogistics, len(orderCodeToOrderSku[k]))
 		goodsList := orderCodeToOrderSku[k]
+		goods := make([]args.GoodsLogistics, len(goodsList))
 		for i := 0; i < len(goodsList); i++ {
 			goodsLogistics := args.GoodsLogistics{
 				SkuCode: goodsList[i].SkuCode,
@@ -219,6 +224,15 @@ func confirmSkuInventory(ctx context.Context, orderCodeList []string) error {
 }
 
 func handleOrderLogistics(ctx context.Context, orderList []args.OrderLogisticsDetail) error {
+	// 关联物流消息
+	serverName := args.RpcServiceMicroMallLogistics
+	conn, err := util.GetGrpcClient(serverName)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
+		return err
+	}
+	defer conn.Close()
+	clientLogistics := logistics_business.NewLogisticsBusinessServiceClient(conn)
 	for i := 0; i < len(orderList); i++ {
 		row := orderList[i]
 		goods := make([]*logistics_business.GoodsInfo, len(row.Goods))
@@ -248,25 +262,15 @@ func handleOrderLogistics(ctx context.Context, orderList []args.OrderLogisticsDe
 			},
 			Goods: goods,
 		}
-		// 关联物流消息
-		serverName := args.RpcServiceMicroMallLogistics
-		conn, err := util.GetGrpcClient(serverName)
-		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
-			return err
-		}
-		clientLogistics := logistics_business.NewLogisticsBusinessServiceClient(conn)
 		applyRsp, err := clientLogistics.ApplyLogistics(ctx, &reqLogistics)
-		conn.Close()
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics %v,err: %v, r: %+v", applyRsp, err, reqLogistics)
+			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics err: %v, r: %+v", err, reqLogistics)
 			return err
 		}
-		if applyRsp == nil || applyRsp.Common == nil || applyRsp.Common.Code == logistics_business.RetCode_ERROR {
-			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics %v,err: %v, r: %+v", applyRsp, err, reqLogistics)
+		if applyRsp.Common.Code != logistics_business.RetCode_SUCCESS {
+			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics req: %+v, resp: %+v", reqLogistics, applyRsp)
 			return err
 		}
-		kelvins.BusinessLogger.Infof(ctx, "ApplyLogistics code: %v", applyRsp.LogisticsCode)
 	}
 	return nil
 }

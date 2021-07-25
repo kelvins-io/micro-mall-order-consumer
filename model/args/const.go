@@ -43,6 +43,10 @@ const (
 	RpcServiceMicroMallUserTrolley = "micro-mall-trolley"
 )
 
+const (
+	UserCreateOrderTemplate = "尊敬的用户【%v】你好，你于：%v 购买的 %v 已经成功下单了，请尽快支付哟"
+)
+
 type CommonBusinessMsg struct {
 	Type int    `json:"type"`
 	Tag  string `json:"tag"`
