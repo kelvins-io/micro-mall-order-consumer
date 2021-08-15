@@ -76,7 +76,7 @@ func TradePayCallbackConsume(ctx context.Context, body string) error {
 func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) ([]args.OrderLogisticsDetail, error) {
 	result := make([]args.OrderLogisticsDetail, 0)
 	serverName := args.RpcServiceMicroMallUsers
-	conn, err := util.GetGrpcClient(serverName)
+	conn, err := util.GetGrpcClient(ctx, serverName)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 		return result, err
@@ -197,7 +197,7 @@ func updateOrderState(ctx context.Context, orderList []string) error {
 
 func confirmSkuInventory(ctx context.Context, orderCodeList []string) error {
 	serverName := args.RpcServiceMicroMallSku
-	conn, err := util.GetGrpcClient(serverName)
+	conn, err := util.GetGrpcClient(ctx, serverName)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 		return err
@@ -226,7 +226,7 @@ func confirmSkuInventory(ctx context.Context, orderCodeList []string) error {
 func handleOrderLogistics(ctx context.Context, orderList []args.OrderLogisticsDetail) error {
 	// 关联物流消息
 	serverName := args.RpcServiceMicroMallLogistics
-	conn, err := util.GetGrpcClient(serverName)
+	conn, err := util.GetGrpcClient(ctx, serverName)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 		return err

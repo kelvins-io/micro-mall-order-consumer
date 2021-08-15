@@ -84,7 +84,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 		for i := 0; i < len(orderSkuList); i++ {
 			orderSku := orderSkuList[i]
 			serverName := args.RpcServiceMicroMallUserTrolley
-			conn, err := util.GetGrpcClient(serverName)
+			conn, err := util.GetGrpcClient(ctx, serverName)
 			if err != nil {
 				kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 				return
@@ -113,7 +113,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 
 func getUserInfo(ctx context.Context, uid int64) (userName string, err error) {
 	serverName := args.RpcServiceMicroMallUsers
-	conn, err := util.GetGrpcClient(serverName)
+	conn, err := util.GetGrpcClient(ctx, serverName)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 		return "", err
