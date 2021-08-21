@@ -89,7 +89,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 				kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 				return
 			}
-			defer conn.Close()
+			//defer conn.Close()
 			client := trolley_business.NewTrolleyBusinessServiceClient(conn)
 			r := trolley_business.RemoveSkuRequest{
 				Uid:     notice.Uid,

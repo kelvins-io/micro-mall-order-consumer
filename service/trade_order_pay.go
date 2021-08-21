@@ -81,7 +81,7 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 		return result, err
 	}
-	defer conn.Close()
+	//defer conn.Close()
 	usersClient := users.NewUsersServiceClient(conn)
 	userDeliveryReq := &users.GetUserDeliveryInfoRequest{
 		Uid: uid,
@@ -202,7 +202,7 @@ func confirmSkuInventory(ctx context.Context, orderCodeList []string) error {
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 		return err
 	}
-	defer conn.Close()
+	//defer conn.Close()
 	skuClient := sku_business.NewSkuBusinessServiceClient(conn)
 	skuReq := &sku_business.ConfirmSkuInventoryRequest{
 		OutTradeNo: orderCodeList,
@@ -231,7 +231,7 @@ func handleOrderLogistics(ctx context.Context, orderList []args.OrderLogisticsDe
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
 		return err
 	}
-	defer conn.Close()
+	//defer conn.Close()
 	clientLogistics := logistics_business.NewLogisticsBusinessServiceClient(conn)
 	for i := 0; i < len(orderList); i++ {
 		row := orderList[i]
