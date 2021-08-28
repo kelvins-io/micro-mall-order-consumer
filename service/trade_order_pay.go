@@ -88,11 +88,11 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 	}
 	userDeliveryRsp, err := usersClient.GetUserDeliveryInfo(ctx, userDeliveryReq)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo err: %v, req: %+v", err, userDeliveryReq)
+		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo err: %v, req: %v", err, json.MarshalToStringNoError(userDeliveryReq))
 		return result, err
 	}
 	if userDeliveryRsp.Common.Code != users.RetCode_SUCCESS {
-		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo err: %v,req: %+v rsp: %+v", err, userDeliveryReq, userDeliveryRsp)
+		kelvins.ErrLogger.Errorf(ctx, "GetUserDeliveryInfo err: %v,req: %v rsp: %v", err, json.MarshalToStringNoError(userDeliveryReq), json.MarshalToStringNoError(userDeliveryRsp))
 		return result, err
 	}
 	deliveryInfo := args.DeliveryLogistics{
@@ -116,7 +116,7 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 	}
 	orderSceneShopList, err := repository.FindOrderSceneShopList(orderCodeList)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "FindOrderSceneShopList err: %v, orderCodeList: %v", err, orderCodeList)
+		kelvins.ErrLogger.Errorf(ctx, "FindOrderSceneShopList err: %v, orderCodeList: %v", err, json.MarshalToStringNoError(orderCodeList))
 		return result, fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
 	}
 	orderCodeToSceneShop := map[string]mysql.OrderSceneShop{}
@@ -131,7 +131,7 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 	}
 	orderSkuList, err := repository.GetOrderSkuListByOrderCode(orderCodeList)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuListByOrderCode err: %v, orderCodeList: %v", err, orderCodeList)
+		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuListByOrderCode err: %v, orderCodeList: %v", err, json.MarshalToStringNoError(orderCodeList))
 		return result, fmt.Errorf(errcode.GetErrMsg(code.ErrorServer))
 	}
 	orderCodeToOrderSku := map[string][]mysql.OrderSku{}
@@ -187,7 +187,7 @@ func updateOrderState(ctx context.Context, orderList []string) error {
 	}
 	rowsAffected, err := repository.UpdateOrder(where, maps)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "UpdateOrderByTx err: %v, where: %+v, maps: %+v", err, where, maps)
+		kelvins.ErrLogger.Errorf(ctx, "UpdateOrderByTx err: %v, where: %v, maps: %v", err, json.MarshalToStringNoError(where), json.MarshalToStringNoError(maps))
 		return err
 	}
 	_ = rowsAffected
@@ -213,11 +213,11 @@ func confirmSkuInventory(ctx context.Context, orderCodeList []string) error {
 	}
 	skuRsp, err := skuClient.ConfirmSkuInventory(ctx, skuReq)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "ConfirmSkuInventory err: %v, skuReq: %+v", err, skuReq)
+		kelvins.ErrLogger.Errorf(ctx, "ConfirmSkuInventory err: %v, skuReq: %v", err, json.MarshalToStringNoError(skuReq))
 		return err
 	}
 	if skuRsp.Common.Code != sku_business.RetCode_SUCCESS {
-		kelvins.ErrLogger.Errorf(ctx, "ConfirmSkuInventory err: %v, skuReq: %+v,skuRsp: %+v ", err, skuReq, skuRsp)
+		kelvins.ErrLogger.Errorf(ctx, "ConfirmSkuInventory err: %v, skuReq: %v,skuRsp: %v ", err, json.MarshalToStringNoError(skuReq), json.MarshalToStringNoError(skuRsp))
 		return fmt.Errorf("ConfirmSkuInventory err")
 	}
 	return nil
@@ -264,11 +264,11 @@ func handleOrderLogistics(ctx context.Context, orderList []args.OrderLogisticsDe
 		}
 		applyRsp, err := clientLogistics.ApplyLogistics(ctx, &reqLogistics)
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics err: %v, r: %+v", err, reqLogistics)
+			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics err: %v, r: %v", err, json.MarshalToStringNoError(reqLogistics))
 			return err
 		}
 		if applyRsp.Common.Code != logistics_business.RetCode_SUCCESS {
-			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics req: %+v, resp: %+v", reqLogistics, applyRsp)
+			kelvins.ErrLogger.Errorf(ctx, "ApplyLogistics req: %v, resp: %v", json.MarshalToStringNoError(reqLogistics), json.MarshalToStringNoError(applyRsp))
 			return err
 		}
 	}

@@ -56,7 +56,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 	}
 	orderSkuList, err := repository.GetOrderSkuList("shop_id,sku_code", shopIdList, orderCodeList)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuList ,err: %v, shopIdList: %+v,orderCodeList: %+v", err, shopIdList, orderCodeList)
+		kelvins.ErrLogger.Errorf(ctx, "GetOrderSkuList ,err: %v, shopIdList: %v,orderCodeList: %v", err, json.MarshalToStringNoError(shopIdList), json.MarshalToStringNoError(orderCodeList))
 		return err
 	}
 	if len(orderSkuList) == 0 {
@@ -67,7 +67,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 	go func() {
 		userName, err := getUserInfo(ctx, notice.Uid)
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "getUserInfo ,err: %v, uid: %+v", err, notice.Uid)
+			kelvins.ErrLogger.Errorf(ctx, "getUserInfo ,err: %v, uid: %v", err, notice.Uid)
 			return
 		}
 		emailNotice := fmt.Sprintf(args.UserCreateOrderTemplate, userName, time.Now().String(), skuNotice.String())
@@ -98,11 +98,11 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 			}
 			rsp, err := client.RemoveSku(ctx, &r)
 			if err != nil {
-				kelvins.ErrLogger.Errorf(ctx, "RemoveSku %v,err: %v, r: %+v", serverName, err, r)
+				kelvins.ErrLogger.Errorf(ctx, "RemoveSku %v,err: %v, r: %v", serverName, err, json.MarshalToStringNoError(r))
 				return
 			}
 			if rsp.Common.Code != trolley_business.RetCode_SUCCESS {
-				kelvins.ErrLogger.Errorf(ctx, "RemoveSku %v,not ok : %v, rsp: %+v", serverName, err, rsp)
+				kelvins.ErrLogger.Errorf(ctx, "RemoveSku req %v, rsp: %v", json.MarshalToStringNoError(r), json.MarshalToStringNoError(rsp))
 				return
 			}
 		}
