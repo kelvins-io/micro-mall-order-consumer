@@ -95,6 +95,7 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 				Uid:     notice.Uid,
 				ShopId:  orderSku.ShopId,
 				SkuCode: orderSku.SkuCode,
+				Count:   -1, // 全部移除
 			}
 			rsp, err := client.RemoveSku(ctx, &r)
 			if err != nil {
