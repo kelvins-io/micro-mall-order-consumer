@@ -71,12 +71,15 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 			return
 		}
 		emailNotice := fmt.Sprintf(args.UserCreateOrderTemplate, userName, time.Now().String(), skuNotice.String())
-		for _, receiver := range vars.EmailNoticeSetting.Receivers {
-			err := email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-			if err != nil {
-				kelvins.ErrLogger.Info(ctx, "noticeUserPayResult SendEmailNotice err, emailNotice: %v", emailNotice)
+		if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
+			for _, receiver := range vars.EmailNoticeSetting.Receivers {
+				err := email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
+				if err != nil {
+					kelvins.ErrLogger.Info(ctx, "noticeUserPayResult SendEmailNotice err, emailNotice: %v", emailNotice)
+				}
 			}
 		}
+
 	}()
 
 	// 从购物车中删除商品
