@@ -31,9 +31,9 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 		return fmt.Errorf(errcode.GetErrMsg(code.NoticeTypeNotEqual))
 	}
 	var notice args.TradeOrderNotice
-	err = json.Unmarshal(businessMsg.Msg, &notice)
+	err = json.Unmarshal(businessMsg.Content, &notice)
 	if err != nil {
-		kelvins.ErrLogger.Info(ctx, "businessMsg.Msg: %v Unmarshal err: %v", businessMsg.Msg, err)
+		kelvins.ErrLogger.Info(ctx, "businessMsg.Msg: %v Unmarshal err: %v", businessMsg.Content, err)
 		return err
 	}
 	time.Sleep(3 * time.Second) // 订单创建事务先执行
