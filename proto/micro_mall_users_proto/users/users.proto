@@ -45,12 +45,6 @@ service UsersService {
             body: "*"
         };
     }
-    // 检查用户身份
-    rpc CheckUserIdentity(CheckUserIdentityRequest) returns (CheckUserIdentityResponse) {
-        option (google.api.http) = {
-            get: "/v1/user/identity"
-        };
-    }
     // 重置登录密码
     rpc PasswordReset(PasswordResetRequest) returns (PasswordResetResponse) {
         option (google.api.http) = {
@@ -97,7 +91,7 @@ service UsersService {
             get: "/v1/user/info/check"
         };
     }
-    // 检查用户
+    // 检查用户状态
     rpc CheckUserState(CheckUserStateRequest) returns (CheckUserStateResponse) {
         option (google.api.http) = {
             get: "/v1/user/state/check"
@@ -113,6 +107,12 @@ service UsersService {
     rpc ListUserInfo(ListUserInfoRequest) returns (ListUserInfoResponse) {
         option (google.api.http) = {
             get: "/v1/user/info/list"
+        };
+    }
+    // 搜索用户
+    rpc SearchUserInfo(SearchUserInfoRequest) returns (SearchUserInfoResponse) {
+        option (google.api.http) = {
+            get: "/v1/user/info/search"
         };
     }
 }
@@ -145,6 +145,12 @@ service MerchantsService {
             body: "*"
         };
     }
+    // 搜索商户
+    rpc SearchMerchantInfo(SearchMerchantInfoRequest) returns (SearchMerchantInfoResponse) {
+        option (google.api.http) = {
+            get: "/v1/user/merchants/info/search"
+        };
+    }
 }
 
 enum RetCode {
@@ -157,7 +163,7 @@ enum RetCode {
     ACCOUNT_EXIST = 50005;
     ACCOUNT_NOT_EXIST = 50006;
     USER_PWD_NOT_MATCH = 50007;
-    USER_LOGIN_NOT_ALLOW = 50008;
+//    USER_LOGIN_NOT_ALLOW = 50008;
     USER_DELIVERY_INFO_EXIST = 50009;
     USER_DELIVERY_INFO_NOT_EXIST = 50010;
     TRANSACTION_FAILED = 50011;
@@ -167,6 +173,7 @@ enum RetCode {
     USER_CHARGE_SUCCESS = 50015;
     USER_CHARGE_TRADE_NO_EMPTY = 50016;
     USER_STATE_NOT_VERIFY = 50017;
+    USER_STATE_FORBIDDEN_LOGIN = 50018;
 }
 
 enum OperationType {
@@ -330,16 +337,6 @@ message GetUserAccountIdResponse {
     repeated UserAccountInfo  info_list = 2;
 }
 
-message CheckUserIdentityRequest {
-    string country_code = 1;
-    string phone = 2;
-    string pwd = 3;
-}
-
-message CheckUserIdentityResponse {
-    CommonResponse common = 1;
-}
-
 message GetUserByInviteCodeRequest {
     string invite_code = 1;
 }
@@ -494,7 +491,21 @@ message MerchantsAssociateShopRequest {
 }
 
 message MerchantsAssociateShopResponse {
-    CommonResponse common =1;
+    CommonResponse common = 1;
+}
+
+message SearchMerchantInfoRequest {
+    string query = 1;
+}
+
+message SearchMerchantInfoResponse {
+    CommonResponse common = 1;
+    repeated SearchMerchantsInfoEntry list = 2;
+}
+
+message SearchMerchantsInfoEntry {
+    MerchantsMaterialInfo info = 1;
+    double score = 2;
 }
 
 message MerchantsMaterialAuditRequest {
@@ -520,6 +531,20 @@ message ListUserInfoResponse {
     CommonResponse common = 1;
     repeated MobilePhone user_info_list = 2;
     reserved 3;
+}
+
+message SearchUserInfoRequest {
+    string query = 1;
+}
+
+message SearchUserInfoResponse {
+    CommonResponse common = 1;
+    repeated SearchUserInfoEntry list = 2;
+}
+
+message SearchUserInfoEntry {
+    UserInfo info = 1;
+    double score = 2;
 }
 
 message CommonResponse {
