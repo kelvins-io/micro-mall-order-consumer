@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"gitee.com/cristiane/micro-mall-order-consumer/model/args"
 	"gitee.com/cristiane/micro-mall-order-consumer/model/mysql"
 	"gitee.com/cristiane/micro-mall-order-consumer/pkg/code"
@@ -14,7 +16,6 @@ import (
 	"gitee.com/kelvins-io/common/errcode"
 	"gitee.com/kelvins-io/common/json"
 	"gitee.com/kelvins-io/kelvins"
-	"time"
 )
 
 func TradePayCallbackConsume(ctx context.Context, body string) error {
@@ -124,9 +125,11 @@ func getOrderDetailListByTxCode(ctx context.Context, uid int64, txCode string) (
 		orderCodeToSceneShop[orderSceneShopList[i].OrderCode] = orderSceneShopList[i]
 	}
 	for i := 0; i < len(orderList); i++ {
+		//deliveryInfo.SendUserId = orderCodeToSceneShop[orderList[i].OrderCode].ShopId
 		deliveryInfo.SendUser = orderCodeToSceneShop[orderList[i].OrderCode].ShopName
 		deliveryInfo.SendAddr = orderCodeToSceneShop[orderList[i].OrderCode].ShopAddress
 		deliveryInfo.SendTime = util.ParseTimeOfStr(orderList[i].PayExpire.Unix())
+		deliveryInfo.ReceiveUserId = uid
 		orderToDeliveryInfo[orderList[i].OrderCode] = deliveryInfo
 	}
 	orderSkuList, err := repository.GetOrderSkuListByOrderCode(orderCodeList)
@@ -252,13 +255,15 @@ func handleOrderLogistics(ctx context.Context, orderList []args.OrderLogisticsDe
 			ReceiveType: row.Delivery.ReceiveType,
 			SendTime:    util.ParseTimeOfStr(time.Now().Unix()),
 			Customer: &logistics_business.CustomerInfo{
-				SendUser:     row.Delivery.SendUser,
-				SendAddr:     row.Delivery.SendAddr,
-				SendPhone:    row.Delivery.SendPhone,
-				SendTime:     row.Delivery.SendTime,
-				ReceiveUser:  row.Delivery.ReceiveUser,
-				ReceiveAddr:  row.Delivery.ReceiveAddr,
-				ReceivePhone: row.Delivery.ReceivePhone,
+				SendUserId:    row.Delivery.SendUserId,
+				SendUser:      row.Delivery.SendUser,
+				SendAddr:      row.Delivery.SendAddr,
+				SendPhone:     row.Delivery.SendPhone,
+				SendTime:      row.Delivery.SendTime,
+				ReceiveUser:   row.Delivery.ReceiveUser,
+				ReceiveAddr:   row.Delivery.ReceiveAddr,
+				ReceivePhone:  row.Delivery.ReceivePhone,
+				ReceiveUserId: row.Delivery.ReceiveUserId,
 			},
 			Goods: goods,
 		}

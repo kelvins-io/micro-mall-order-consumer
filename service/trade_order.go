@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"gitee.com/cristiane/micro-mall-order-consumer/model/args"
 	"gitee.com/cristiane/micro-mall-order-consumer/pkg/code"
 	"gitee.com/cristiane/micro-mall-order-consumer/pkg/util"
@@ -10,12 +13,9 @@ import (
 	"gitee.com/cristiane/micro-mall-order-consumer/proto/micro_mall_trolley_proto/trolley_business"
 	"gitee.com/cristiane/micro-mall-order-consumer/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-order-consumer/repository"
-	"gitee.com/cristiane/micro-mall-order-consumer/vars"
 	"gitee.com/kelvins-io/common/errcode"
 	"gitee.com/kelvins-io/common/json"
 	"gitee.com/kelvins-io/kelvins"
-	"strings"
-	"time"
 )
 
 func TradeOrderConsume(ctx context.Context, body string) error {
@@ -65,21 +65,18 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 
 	// 邮件通知
 	go func() {
-		userName, err := getUserInfo(ctx, notice.Uid)
+		userInfo, err := getUserInfo(ctx, notice.Uid)
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "getUserInfo ,err: %v, uid: %v", err, notice.Uid)
 			return
 		}
-		emailNotice := fmt.Sprintf(args.UserCreateOrderTemplate, userName, time.Now().String(), skuNotice.String())
-		if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
-			for _, receiver := range vars.EmailNoticeSetting.Receivers {
-				err := email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-				if err != nil {
-					kelvins.ErrLogger.Info(ctx, "noticeUserPayResult SendEmailNotice err, emailNotice: %v", emailNotice)
-				}
+		if userInfo != nil && userInfo.Email != "" {
+			emailNotice := fmt.Sprintf(args.UserCreateOrderTemplate, userInfo.UserName, util.ParseTimeOfStr(time.Now().Unix()), skuNotice.String())
+			err := email.SendEmailNotice(ctx, userInfo.Email, kelvins.AppName, emailNotice)
+			if err != nil {
+				kelvins.ErrLogger.Info(ctx, "noticeUserPayResult SendEmailNotice err, emailNotice: %v", emailNotice)
 			}
 		}
-
 	}()
 
 	// 从购物车中删除商品
@@ -115,23 +112,24 @@ func TradeOrderConsume(ctx context.Context, body string) error {
 	return nil
 }
 
-func getUserInfo(ctx context.Context, uid int64) (userName string, err error) {
+func getUserInfo(ctx context.Context, uid int64) (userInfo *users.UserInfo, err error) {
 	serverName := args.RpcServiceMicroMallUsers
 	conn, err := util.GetGrpcClient(ctx, serverName)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
-		return "", err
+		return
 	}
 	client := users.NewUsersServiceClient(conn)
-	userInfo, err := client.GetUserInfo(ctx, &users.GetUserInfoRequest{Uid: uid})
+	result, err := client.GetUserInfo(ctx, &users.GetUserInfoRequest{Uid: uid})
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserInfo err: %v, uid: %v", err, uid)
-		return "", err
+		return
 	}
-	if userInfo.Common.Code != users.RetCode_SUCCESS {
-		return "", fmt.Errorf("GetUserInfo err %v", userInfo.Common.Code)
+	if result.Common.Code == users.RetCode_SUCCESS {
+		userInfo = result.GetInfo()
 	}
-	return userInfo.GetInfo().GetUserName(), nil
+
+	return
 }
 
 func TradeOrderConsumeErr(ctx context.Context, errMsg, body string) error {

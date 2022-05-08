@@ -11,16 +11,18 @@ type MerchantsMaterialInfo struct {
 }
 
 type DeliveryLogistics struct {
-	Courier      string `json:"courier"`
-	CourierType  int32  `json:"courier_type"`
-	ReceiveType  int32  `json:"receive_type"`
-	SendUser     string `json:"send_user"`
-	SendAddr     string `json:"send_addr"`
-	SendPhone    string `json:"send_phone"`
-	SendTime     string `json:"send_time"`
-	ReceiveUser  string `json:"receive_user"`
-	ReceiveAddr  string `json:"receive_addr"`
-	ReceivePhone string `json:"receive_phone"`
+	Courier       string `json:"courier"`
+	CourierType   int32  `json:"courier_type"`
+	ReceiveType   int32  `json:"receive_type"`
+	SendUser      string `json:"send_user"`
+	SendUserId    int64  `json:"send_user_id"`
+	SendAddr      string `json:"send_addr"`
+	SendPhone     string `json:"send_phone"`
+	SendTime      string `json:"send_time"`
+	ReceiveUser   string `json:"receive_user"`
+	ReceiveAddr   string `json:"receive_addr"`
+	ReceivePhone  string `json:"receive_phone"`
+	ReceiveUserId int64  `json:"receive_user_id"`
 }
 
 type OrderLogisticsDetail struct {
